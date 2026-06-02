@@ -4,6 +4,28 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Available Scripts
 
+
+### Key decisions
+
+**State: `useReducer` + Context instead of Redux**  
+The data flow is unidirectional and the action surface is well-defined. `useReducer` gives the same predictability as Redux without the boilerplate. If the app grew to need cross-feature state sharing, Zustand would be the natural next step.
+
+**Virtual scrolling with `react-window`**  
+`FixedSizeList` renders only the visible window of rows (≈14 at any time), keeping DOM nodes constant regardless of dataset size. Row height is fixed at 44px for deterministic layout math.
+
+**Edits stored separately from source data**  
+`edits: { [rowId]: { [field]: newValue } }` lives alongside `originalData`. The processed view merges them on every render via `useMemo`. This makes save/cancel/undo trivial and avoids mutating the source array.
+
+**Undo is per-field with a stack**  
+`editHistory: { [rowId]: { [field]: [prev1, prev2, ...] } }` — each commit pushes the previous value. Undo pops the stack.
+
+**`useMemo` for filter+sort pipeline**  
+The expensive filter/sort chain (`processedRows`) only recomputes when `originalData`, `edits`, `filters`, or `sortConfig` change. `paginatedRows` is a cheap `.slice()` of that.
+
+**`memo` on `TableRow`**  
+Without `memo`, every state change re-renders all visible rows. With it, only rows whose `row` reference changed re-render (typically just the one being edited).
+
+
 In the project directory, you can run:
 
 ### `npm start`
